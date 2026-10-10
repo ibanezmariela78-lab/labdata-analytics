@@ -4,8 +4,8 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from src.data import generate_laboratory_data, clean_laboratory_data
 
-st.set_page_config(page_title="DataVision AI | Laboratory Intelligence", page_icon="🧪", layout="wide")
-st.title("🧪 DataVision AI — Laboratory Intelligence")
+st.set_page_config(page_title="LabData Analytics | Laboratory Intelligence", page_icon="🧪", layout="wide")
+st.title("🧪 LabData Analytics — Laboratory Data Science & Business Intelligence")
 st.caption("Demostración con datos sintéticos; no son mediciones reales ni resultados validados de laboratorio.")
 
 @st.cache_data
