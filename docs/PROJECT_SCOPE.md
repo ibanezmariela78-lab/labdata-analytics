@@ -1,4 +1,4 @@
-# DataVision AI — Laboratory Intelligence
+# LabData Analytics — Laboratory Data Science & Business Intelligence
 
 Proyecto de ciencia de datos para laboratorios químicos, farmacéuticos y biotecnológicos.
 
