@@ -1,4 +1,4 @@
-# DataVision AI — Laboratory Intelligence
+# LabData Analytics — Laboratory Data Science & Business Intelligence
 
 Plataforma integral de Ciencia de Datos para laboratorios químicos, farmacéuticos y biotecnológicos.
 
