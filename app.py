@@ -4,6 +4,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from src.data import generate_laboratory_data, clean_laboratory_data
 from src.inventory import generate_inventory_data, inventory_kpis
+from src.predictive import evaluate_assay_model
 
 st.set_page_config(page_title="LabData Analytics", page_icon="🧪", layout="wide")
 st.title("🧪 LabData Analytics")
@@ -29,7 +30,7 @@ if filtered.empty:
     st.warning("Seleccioná al menos un producto para continuar.")
     st.stop()
 
-quality, stats, clusters, inventory = st.tabs(["🧪 Calidad", "📊 Estadística", "🔬 Exploración 3D", "📦 Inventarios"])
+quality, stats, clusters, inventory, predictive = st.tabs(["🧪 Calidad", "📊 Estadística", "🔬 Exploración 3D", "📦 Inventarios", "📈 Predicción"])
 
 with quality:
     st.subheader("Control de calidad")
@@ -96,6 +97,34 @@ with inventory:
     st.dataframe(view, use_container_width=True, hide_index=True)
     st.download_button("Descargar inventario CSV", view.to_csv(index=False).encode("utf-8"),
                        "inventory_synthetic.csv", "text/csv")
+
+
+with predictive:
+    st.subheader("Modelo predictivo de resultados analíticos")
+    st.caption("Regresión Random Forest con división entrenamiento/prueba 75/25. Datos sintéticos, sin validez clínica ni regulatoria.")
+    st.info("Las variables usadas son producto, temperatura, pH y objetivo. No se utiliza la desviación ni el indicador fuera de especificación para evitar fuga de información.")
+    if len(filtered) < 30:
+        st.warning("Se requieren al menos 30 muestras para evaluar el modelo.")
+    else:
+        @st.cache_data
+        def run_model(data):
+            return evaluate_assay_model(data)
+        metrics, predictions = run_model(filtered)
+        st.markdown("**Evaluación en muestras reservadas para prueba**")
+        st.dataframe(metrics.round(3), hide_index=True, use_container_width=True)
+        fig = px.scatter(predictions, x="Real (%)", y="Predicción (%)",
+                         hover_data=["Muestra", "Error absoluto"],
+                         title="Valores observados frente a predichos")
+        lower = min(predictions["Real (%)"].min(), predictions["Predicción (%)"].min())
+        upper = max(predictions["Real (%)"].max(), predictions["Predicción (%)"].max())
+        fig.add_shape(type="line", x0=lower, y0=lower, x1=upper, y1=upper,
+                      line=dict(color="gray", dash="dash"))
+        st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(predictions.round(3), hide_index=True, use_container_width=True)
+        st.download_button("Descargar predicciones CSV",
+                           predictions.to_csv(index=False).encode("utf-8"),
+                           "predicciones_sinteticas.csv", "text/csv")
+        st.caption("Comparar siempre contra el modelo de referencia. Un R² bajo o negativo indica rendimiento limitado. Los datos fueron generados artificialmente y pueden no contener patrones predictivos reales.")
 
 st.divider()
 st.caption("Autora: Mariela Ibañez | +54 11 4058-2174 | GitHub: ibanezmariela78-lab | LinkedIn: mariela-ibanez-quimioinformatica")
