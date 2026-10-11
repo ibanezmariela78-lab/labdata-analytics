@@ -5,6 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from src.data import generate_laboratory_data, clean_laboratory_data
 from src.inventory import generate_inventory_data, inventory_kpis
 from src.predictive import evaluate_assay_model
+from src.quality import run_etl
 
 st.set_page_config(page_title="LabData Analytics", page_icon="🧪", layout="wide")
 st.title("🧪 LabData Analytics")
@@ -30,7 +31,7 @@ if filtered.empty:
     st.warning("Seleccioná al menos un producto para continuar.")
     st.stop()
 
-quality, stats, clusters, inventory, predictive = st.tabs(["🧪 Calidad", "📊 Estadística", "🔬 Exploración 3D", "📦 Inventarios", "📈 Predicción"])
+quality, stats, clusters, inventory, predictive, audit = st.tabs(["🧪 Calidad", "📊 Estadística", "🔬 Exploración 3D", "📦 Inventarios", "📈 Predicción", "🛡️ Auditoría ETL"])
 
 with quality:
     st.subheader("Control de calidad")
@@ -125,6 +126,25 @@ with predictive:
                            predictions.to_csv(index=False).encode("utf-8"),
                            "predicciones_sinteticas.csv", "text/csv")
         st.caption("Comparar siempre contra el modelo de referencia. Un R² bajo o negativo indica rendimiento limitado. Los datos fueron generados artificialmente y pueden no contener patrones predictivos reales.")
+
+
+with audit:
+    st.subheader("Auditoría de calidad de datos")
+    st.caption("Evaluación del conjunto original antes de limpiar, deduplicar e imputar datos.")
+    report, cleaned = run_etl(raw)
+    st.dataframe(report, hide_index=True, use_container_width=True)
+    a, b = st.columns(2)
+    a.metric("Registros originales", len(raw))
+    b.metric("Registros procesados", len(cleaned))
+    fig = px.bar(report[report["Control"] != "Registros originales"],
+                 x="Cantidad", y="Control", orientation="h",
+                 title="Resultados de los controles de calidad")
+    fig.update_layout(margin=dict(l=5, r=5, t=45, b=5), yaxis=dict(autorange="reversed"))
+    st.plotly_chart(fig, use_container_width=True)
+    st.download_button("Descargar informe de auditoría CSV",
+                       report.to_csv(index=False).encode("utf-8"),
+                       "auditoria_calidad_datos.csv", "text/csv")
+    st.caption("El informe muestra incidencias detectadas, no certifica cumplimiento normativo.")
 
 st.divider()
 st.caption("Autora: Mariela Ibañez | +54 11 4058-2174 | GitHub: ibanezmariela78-lab | LinkedIn: mariela-ibanez-quimioinformatica")
