@@ -22,6 +22,10 @@ streamlit run app.py
 - `sql/schema.sql`: esquema PostgreSQL.
 - `docs/PROJECT_SCOPE.md`: alcance.
 
+## PostgreSQL y ETL opcional
+
+El pipeline de carga PostgreSQL se encuentra en `src/postgres_etl.py`. Las consultas de ejemplo están en `sql/analytics.sql` y las instrucciones en [docs/POSTGRESQL.md](docs/POSTGRESQL.md). No requiere credenciales para ejecutar el dashboard público.
+
 ## Hoja de ruta
 ETL y data warehouse dimensional, Supply Chain, predicción y evaluación, Power BI y publicación web.
 
