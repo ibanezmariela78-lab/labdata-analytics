@@ -5,68 +5,97 @@ from sklearn.preprocessing import StandardScaler
 from src.data import generate_laboratory_data, clean_laboratory_data
 from src.inventory import generate_inventory_data, inventory_kpis
 
-st.set_page_config(page_title="LabData Analytics | Laboratory Intelligence", page_icon="🧪", layout="wide")
-st.title("🧪 LabData Analytics — Laboratory Data Science & Business Intelligence")
-st.caption("Demostración con datos sintéticos; no son mediciones reales ni resultados validados de laboratorio.")
+st.set_page_config(page_title="LabData Analytics", page_icon="🧪", layout="wide")
+st.title("🧪 LabData Analytics")
+st.caption("Ciencia de Datos y Business Intelligence para laboratorios | Demostración con datos sintéticos.")
 
 @st.cache_data
 def load_data():
     raw = generate_laboratory_data()
     return raw, clean_laboratory_data(raw)
 
+@st.cache_data
+def load_inventory():
+    return inventory_kpis(generate_inventory_data())
+
 raw, df = load_data()
-selected = st.sidebar.multiselect("Productos", sorted(df["product"].unique()), default=sorted(df["product"].unique()))
+with st.sidebar:
+    st.header("Filtros")
+    selected = st.multiselect("Productos", sorted(df["product"].unique()), default=sorted(df["product"].unique()))
+    st.caption("Datos sintéticos. No son mediciones reales ni resultados validados.")
+
 filtered = df[df["product"].isin(selected)].copy()
 if filtered.empty:
-    st.warning("Seleccioná al menos un producto.")
+    st.warning("Seleccioná al menos un producto para continuar.")
     st.stop()
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Muestras", f"{len(filtered):,}")
-c2.metric("Fuera de especificación", int(filtered["out_of_spec"].sum()))
-c3.metric("Desviación media", f'{filtered["deviation"].mean():.2f}')
-c4.metric("pH faltantes en origen", int(raw["ph"].isna().sum()))
+quality, stats, clusters, inventory = st.tabs(["🧪 Calidad", "📊 Estadística", "🔬 Exploración 3D", "📦 Inventarios"])
 
-left, right = st.columns(2)
-with left:
-    st.subheader("Control analítico por producto")
-    st.plotly_chart(px.box(filtered, x="product", y="assay_pct", color="product", points="outliers"), use_container_width=True)
-with right:
-    st.subheader("Correlación entre variables")
-    numeric = filtered[["temperature_c", "ph", "assay_pct", "deviation"]]
-    st.plotly_chart(px.imshow(numeric.corr(), text_auto=".2f", zmin=-1, zmax=1, color_continuous_scale="RdBu_r"), use_container_width=True)
+with quality:
+    st.subheader("Control de calidad")
+    a, b = st.columns(2)
+    a.metric("Muestras", len(filtered))
+    b.metric("Fuera de especificación", int(filtered["out_of_spec"].sum()))
+    c, d = st.columns(2)
+    c.metric("Desviación media", f'{filtered["deviation"].mean():.2f}')
+    d.metric("pH faltantes en origen", int(raw["ph"].isna().sum()))
+    fig = px.box(filtered, x="product", y="assay_pct", color="product", points="outliers",
+                 labels={"product": "Producto", "assay_pct": "Ensayo (%)"})
+    fig.update_layout(showlegend=False, margin=dict(l=5, r=5, t=15, b=5))
+    st.plotly_chart(fig, use_container_width=True)
+    st.dataframe(filtered, use_container_width=True, hide_index=True)
+    st.download_button("Descargar muestras CSV", filtered.to_csv(index=False).encode("utf-8"),
+                       "laboratory_clean.csv", "text/csv")
 
-st.subheader("Visualización 3D y agrupamientos")
-features = ["temperature_c", "ph", "assay_pct", "deviation"]
-a, b, c = st.columns(3)
-x = a.selectbox("Eje X", features, index=0)
-y = b.selectbox("Eje Y", features, index=1)
-z = c.selectbox("Eje Z", features, index=2)
-if len(filtered) < 2:
-    st.info("Se necesitan al menos dos muestras para realizar agrupamientos.")
-    st.stop()
-k = st.slider("Clústeres", 2, min(6, len(filtered)), min(3, len(filtered)))
-scaled = StandardScaler().fit_transform(filtered[features])
-filtered["cluster"] = KMeans(n_clusters=k, random_state=42, n_init=10).fit_predict(scaled).astype(str)
-st.plotly_chart(px.scatter_3d(filtered, x=x, y=y, z=z, color="cluster", hover_data=["sample_id", "product", "batch"], opacity=0.75), use_container_width=True)
-st.caption("K-means exploratorio: los grupos no equivalen a categorías regulatorias.")
+with stats:
+    st.subheader("Estadística descriptiva")
+    names = {"temperature_c": "Temperatura (°C)", "ph": "pH",
+             "assay_pct": "Ensayo (%)", "deviation": "Desviación"}
+    numeric = filtered[list(names)].rename(columns=names)
+    st.dataframe(numeric.describe().round(2), use_container_width=True)
+    fig = px.imshow(numeric.corr(), text_auto=".2f", zmin=-1, zmax=1,
+                    color_continuous_scale="RdBu_r", aspect="auto")
+    fig.update_layout(margin=dict(l=5, r=5, t=20, b=5))
+    st.plotly_chart(fig, use_container_width=True)
+    st.caption("Correlación no implica causalidad.")
 
-st.subheader("Datos procesados")
-st.dataframe(filtered, use_container_width=True)
-st.download_button("Descargar CSV procesado", filtered.to_csv(index=False).encode("utf-8"), file_name="laboratory_clean.csv", mime="text/csv")
+with clusters:
+    st.subheader("Exploración tridimensional")
+    features = ["temperature_c", "ph", "assay_pct", "deviation"]
+    labels = {"temperature_c": "Temperatura (°C)", "ph": "pH",
+              "assay_pct": "Ensayo (%)", "deviation": "Desviación"}
+    x = st.selectbox("Eje X", features, index=0, format_func=lambda v: labels[v])
+    y = st.selectbox("Eje Y", features, index=1, format_func=lambda v: labels[v])
+    z = st.selectbox("Eje Z", features, index=2, format_func=lambda v: labels[v])
+    k = st.slider("Cantidad de grupos", 2, 6, 3)
+    scaled = StandardScaler().fit_transform(filtered[features])
+    filtered["cluster"] = KMeans(n_clusters=k, random_state=42, n_init=10).fit_predict(scaled).astype(str)
+    fig = px.scatter_3d(filtered, x=x, y=y, z=z, color="cluster",
+                        labels={**labels, "cluster": "Grupo"},
+                        hover_data=["sample_id", "product", "batch"], opacity=0.7)
+    fig.update_layout(height=520, margin=dict(l=0, r=0, t=5, b=0),
+                      legend_title_text="Grupo")
+    st.plotly_chart(fig, use_container_width=True)
+    st.caption("Agrupamientos exploratorios K-means; no equivalen a categorías regulatorias.")
+
+with inventory:
+    st.subheader("Inventarios y abastecimiento")
+    st.caption("Simulación conceptual de materiales y producción; sin integración con SAP.")
+    stock = load_inventory()
+    warehouse = st.selectbox("Depósito", ["Todos"] + sorted(stock["warehouse"].unique().tolist()))
+    view = stock if warehouse == "Todos" else stock[stock["warehouse"] == warehouse]
+    a, b = st.columns(2)
+    a.metric("Registros", len(view))
+    b.metric("Bajo punto de reposición", int(view["below_reorder"].sum()))
+    st.metric("Valor del stock (ARS)", f'{view["stock_value_ars"].sum():,.0f}')
+    grouped = view.groupby("material", as_index=False)["stock_value_ars"].sum()
+    fig = px.bar(grouped, x="material", y="stock_value_ars",
+                 labels={"material": "Material", "stock_value_ars": "Valor del stock (ARS)"})
+    fig.update_layout(margin=dict(l=5, r=5, t=10, b=5))
+    st.plotly_chart(fig, use_container_width=True)
+    st.dataframe(view, use_container_width=True, hide_index=True)
+    st.download_button("Descargar inventario CSV", view.to_csv(index=False).encode("utf-8"),
+                       "inventory_synthetic.csv", "text/csv")
 
 st.divider()
-st.header("Inventarios y abastecimiento")
-st.caption("Simulación conceptual de procesos de materiales y producción; no existe integración con SAP.")
-stock_df = inventory_kpis(generate_inventory_data())
-w = st.selectbox("Depósito", ["Todos"] + sorted(stock_df["warehouse"].unique().tolist()))
-stock_view = stock_df if w == "Todos" else stock_df[stock_df["warehouse"] == w]
-i1, i2, i3 = st.columns(3)
-i1.metric("Registros de inventario", len(stock_view))
-i2.metric("Debajo del punto de reposición", int(stock_view["below_reorder"].sum()))
-i3.metric("Valor del stock (ARS)", f'{stock_view["stock_value_ars"].sum():,.0f}')
-st.plotly_chart(px.bar(stock_view.groupby("material", as_index=False)["stock_value_ars"].sum(), x="material", y="stock_value_ars", title="Valor de inventario por material"), use_container_width=True)
-st.dataframe(stock_view, use_container_width=True)
-st.download_button("Descargar inventario CSV", stock_view.to_csv(index=False).encode("utf-8"), file_name="inventory_synthetic.csv", mime="text/csv")
-st.divider()
-st.caption("Autora: Mariela Ibañez | Tel: +54 11 4058-2174 | GitHub: ibanezmariela78-lab | LinkedIn: mariela-ibanez-quimioinformatica")
+st.caption("Autora: Mariela Ibañez | +54 11 4058-2174 | GitHub: ibanezmariela78-lab | LinkedIn: mariela-ibanez-quimioinformatica")
