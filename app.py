@@ -3,6 +3,7 @@ import plotly.express as px
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from src.data import generate_laboratory_data, clean_laboratory_data
+from src.inventory import generate_inventory_data, inventory_kpis
 
 st.set_page_config(page_title="LabData Analytics | Laboratory Intelligence", page_icon="🧪", layout="wide")
 st.title("🧪 LabData Analytics — Laboratory Data Science & Business Intelligence")
@@ -53,5 +54,19 @@ st.caption("K-means exploratorio: los grupos no equivalen a categorías regulato
 st.subheader("Datos procesados")
 st.dataframe(filtered, use_container_width=True)
 st.download_button("Descargar CSV procesado", filtered.to_csv(index=False).encode("utf-8"), file_name="laboratory_clean.csv", mime="text/csv")
+
+st.divider()
+st.header("Inventarios y abastecimiento")
+st.caption("Simulación conceptual de procesos de materiales y producción; no existe integración con SAP.")
+stock_df = inventory_kpis(generate_inventory_data())
+w = st.selectbox("Depósito", ["Todos"] + sorted(stock_df["warehouse"].unique().tolist()))
+stock_view = stock_df if w == "Todos" else stock_df[stock_df["warehouse"] == w]
+i1, i2, i3 = st.columns(3)
+i1.metric("Registros de inventario", len(stock_view))
+i2.metric("Debajo del punto de reposición", int(stock_view["below_reorder"].sum()))
+i3.metric("Valor del stock (ARS)", f'{stock_view["stock_value_ars"].sum():,.0f}')
+st.plotly_chart(px.bar(stock_view.groupby("material", as_index=False)["stock_value_ars"].sum(), x="material", y="stock_value_ars", title="Valor de inventario por material"), use_container_width=True)
+st.dataframe(stock_view, use_container_width=True)
+st.download_button("Descargar inventario CSV", stock_view.to_csv(index=False).encode("utf-8"), file_name="inventory_synthetic.csv", mime="text/csv")
 st.divider()
 st.caption("Autora: Mariela Ibañez | Tel: +54 11 4058-2174 | GitHub: ibanezmariela78-lab | LinkedIn: mariela-ibanez-quimioinformatica")
