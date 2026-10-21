@@ -56,6 +56,10 @@ La demo de Streamlit Community Cloud se despliega desde este repositorio, rama `
 
 **Importante:** PostgreSQL local **no** se conecta al dashboard público; la demo sigue funcionando con datos sintéticos en memoria. Para publicar una base persistente se necesita un PostgreSQL remoto y configurar credenciales privadas en el proveedor de despliegue.
 
+## Presentación para el portfolio
+
+[Leer la ficha técnica y la descripción profesional para CV y LinkedIn](docs/PORTFOLIO.md).
+
 ## Estructura y documentación
 
 - `app.py`: aplicación interactiva.
