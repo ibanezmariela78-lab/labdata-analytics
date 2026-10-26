@@ -2,7 +2,7 @@
 
 **Plataforma demostrativa de Ciencia de Datos y Business Intelligence para laboratorios químicos, farmacéuticos y biotecnológicos.**
 
-**Demo pública:** https://labdata-analytics-gfzd4w5uuaydlhvwezfxtw.streamlit.app/
+**Demo pública:** https://labdata-mibz.streamlit.app/
 
 Los conjuntos de datos son **100 % sintéticos** y reproducibles. Esta aplicación es un proyecto de portfolio, **no** un LIMS real, un sistema SAP, ni una solución validada para uso regulatorio.
 
