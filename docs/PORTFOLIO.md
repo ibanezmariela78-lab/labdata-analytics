@@ -1,7 +1,7 @@
 # LabData Analytics | Ficha profesional del proyecto
 
 **Autora:** Mariela Ibañez  
-**Demostración pública:** https://labdata-analytics-gfzd4w5uuaydlhvwezfxtw.streamlit.app/  
+**Demostración pública:** https://labdata-mibz.streamlit.app/  
 **Código fuente:** https://github.com/ibanezmariela78-lab/labdata-analytics
 
 ## Resumen ejecutivo
@@ -70,7 +70,7 @@ Diseño y publicación de un dashboard interactivo en Python/Streamlit para audi
 
 Desarrollé **LabData Analytics**, un proyecto de portfolio orientado al análisis de datos de laboratorios químicos, farmacéuticos y biotecnológicos. Integra limpieza y auditoría de datos, estadística interactiva, gráficos 3D, análisis de inventarios y evaluación de un modelo predictivo. También incluye un flujo ETL con PostgreSQL y Docker y pruebas automatizadas. Trabaja con datos sintéticos para demostrar el proceso de punta a punta, sin presentarlo como un sistema regulatorio validado.
 
-**Demo:** https://labdata-analytics-gfzd4w5uuaydlhvwezfxtw.streamlit.app/  
+**Demo:** https://labdata-mibz.streamlit.app/  
 **GitHub:** https://github.com/ibanezmariela78-lab/labdata-analytics
 
 ---
